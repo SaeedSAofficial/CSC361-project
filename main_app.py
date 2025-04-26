@@ -265,17 +265,37 @@ class MultiAgentSystem:
         self.coordinator.save(self.model_path)
 
     def handle_user_prompt(self, prompt):
+        
         try:
-            words = prompt.split()
-            first_ten_words = " ".join(words[:10]) if len(words) >= 10 else prompt
+            first_ten_words = prompt.split()[:10]
+            first_ten_text = " ".join(first_ten_words).lower()
+            
+            summary_keywords = [
+                "summarize", 
+                "summary", 
+                "summarization",
+                "summarized",
+                "summarizing"
+            ]
+            
+            # Check if any of the summary keywords are in the first ten words
+            should_skip_first_ten = any(keyword in first_ten_text for keyword in summary_keywords)
+            
+            # Remove the first ten words if they contain summary keywords
+            if should_skip_first_ten and len(prompt.split()) > 10:
+                cleaned_prompt = " ".join(prompt.split()[10:])
+            else:
+                cleaned_prompt = prompt
+            
+            print(cleaned_prompt)
             
             self._ensure_model_loaded()
-            agent = self.coordinator.predict_agent(first_ten_words)
+            agent = self.coordinator.predict_agent(cleaned_prompt)
             
             if agent == "tutor":
-                return tutor_agent(prompt)
+                return tutor_agent(cleaned_prompt)
             elif agent == "summarizer":
-                return summarizer_agent(prompt)
+                return summarizer_agent(cleaned_prompt)
             else:
                 return "Unknown agent type."
         except Exception as e:
